@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>User Data</h1>
+        <table id="userData">
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Mobile No</th>
+                    <th>Email ID</th>
+                    <th>Street</th>
+                    <th>City</th>
+                    <th>State</th>
+                    <th>Country</th>
+                    <th>Login ID</th>
+                    <th>Password</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+     
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        function fetchUserData() {
+            axios.get('/getUser')
+                .then(function(response) {
+                    const userData = response.data;
+                    const userDataBody = document.querySelector('#userData tbody');
+                    userDataBody.innerHTML = ''; 
+
+                    userData.forEach(function(user) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${user.firstName}</td>
+                            <td>${user.lastName}</td>
+                            <td>${user.mobile}</td>
+                            <td>${user.email}</td>
+                            <td>${user.street}</td>
+                            <td>${user.city}</td>
+                            <td>${user.state}</td>
+                            <td>${user.country}</td>
+                            <td>${user.login}</td>
+                            <td>${user.password}</td>
+                            
+                        `;
+                        userDataBody.appendChild(tr);
+                    });
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                });
+        }
+        fetchUserData();
+    </script>
+
+</body>
+</html>
+ 

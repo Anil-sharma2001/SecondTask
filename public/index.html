@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Form</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        margin: 0;
+        padding: 0;
+      }
+      form {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        text-align: center;
+      }
+      label {
+        font-weight: bold;
+      }
+      input[type="text"],
+      input[type="tel"],
+      input[type="email"],
+      input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+      }
+      input[type="submit"],
+      #saved,
+      #liveUsersBtn {
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+      }
+      input[type="submit"]:hover,
+      #saved:hover,
+      #liveUsersBtn:hover {
+        background-color: #0056b3;
+      }
+      #userList {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Enter your details</h2>
+    <form id="myform" method="post" action="/sign_up">
+      <label for="firstName">First Name</label>
+      <input
+        type="text"
+        id="firstName"
+        name="firstName"
+        pattern="[A-Za-z]+"
+        title="The First Name should be alphabatic"
+        required
+      /><br /><br />
+
+      <label for="lastName">Last Name</label>
+      <input
+        type="text"
+        id="lastName"
+        name="lastName"
+        pattern="[A-Za-z]+"
+        title="The Last Name should be alphabatic"
+      /><br /><br />
+
+      <label for="mobile">Mobile No</label>
+      <input
+        type="tel"
+        id="mobile"
+        name="mobile"
+        pattern="\d{10}"
+        title="Please enter 10 digit Mobile No."
+        required
+      /><br /><br />
+
+      <label for="email">Email ID</label>
+      <input type="email" id="email" name="email" required /><br /><br />
+
+      <label for="street">Street</label>
+      <input type="text" id="street" name="street" required /><br /><br />
+
+      <label for="city">City</label>
+      <input type="text" id="city" name="city" required /><br /><br />
+
+      <label for="state">State</label>
+      <input type="text" id="state" name="state" required /><br /><br />
+
+      <label for="country">Country</label>
+      <input type="text" id="country" name="country" required /><br /><br />
+
+      <label for="loginId">Login ID</label>
+      <input
+        type="text"
+        id="loginId"
+        name="login"
+        pattern="[A-Za-z0-9]{8}"
+        title="The login Id should have 8 characters alpha numeric"
+        required
+      /><br /><br />
+
+      <label for="password">Password</label>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}"
+        title="First letter capital and one unique value"
+        required
+      /><br /><br />
+
+      <input type="submit" value="Submit" id="submit" />
+    </form>
+    <br />
+    <button id="saved">View Saved Data</button>
+    <button id="liveUsersBtn">View Live Users</button>
+    <ul id="userList" style="display: none;"></ul>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const submit = document.getElementById('submit');
+      submit.addEventListener("click",()=>{
+        alert('Successfully submitted');
+      });
+
+      const saved = document.getElementById("saved");
+      saved.addEventListener("click", () => {
+        window.location.href = "/user";
+      });
+
+      const socket = io();
+
+      const liveUsersBtn = document.getElementById("liveUsersBtn");
+const userList = document.getElementById("userList");
+
+liveUsersBtn.addEventListener("click", () => {
+  userList.style.display = userList.style.display === "none" ? "block" : "none";
+});
+
+socket.on('user_list', (users) => {
+  userList.innerHTML = '';
+  users.forEach(user => {
+    const li = document.createElement('li');
+    li.textContent = `${user.email} (Socket ID: ${user.socketId})`;
+    li.addEventListener('click', () => {
+  fetch(`/getUser?email=${user.email}`)
+    .then(response => response.json())
+    .then(data => {
+      const clickedUser = data.find(u => u.socketId === user.socketId);
+      const userData = `
+        First Name: ${clickedUser.firstName}\n
+        Last Name: ${clickedUser.lastName}\n
+        Mobile No: ${clickedUser.mobile}\n
+        Email ID: ${clickedUser.email}\n
+        Street: ${clickedUser.street}\n
+        City: ${clickedUser.city}\n
+        State: ${clickedUser.state}\n
+        Country: ${clickedUser.country}\n
+        Login ID: ${clickedUser.login}
+      `;
+      alert(userData);
+    });
+});
+
+    userList.appendChild(li);
+  });
+});
+
+      document.getElementById('myform').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const user = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          mobile: document.getElementById('mobile').value,
+          email: document.getElementById('email').value,
+          street: document.getElementById('street').value,
+          city: document.getElementById('city').value,
+          state: document.getElementById('state').value,
+          country: document.getElementById('country').value,
+          login: document.getElementById('loginId').value,
+          password: document.getElementById('password').value
+        };
+        socket.emit('new_user', user);
+        document.getElementById('myform').submit();
+      });
+    </script>
+  </body>
+</html>
