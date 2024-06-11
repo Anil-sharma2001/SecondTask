@@ -69,22 +69,16 @@
         border-radius: 8px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       }
-      #confirmationMessage {
-        max-width: 400px;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-        border-radius: 5px;
-        display: none;
-        text-align: center; /* Center the text */
+      #submissionMessage {
+        text-align: center;
+        font-weight: bold;
+        color: green;
+        margin-top: 10px;
       }
     </style>
   </head>
   <body>
     <h2>Enter your details</h2>
-    <div id="confirmationMessage">Form successfully submitted!</div>
     <form id="myform" method="post" action="/sign_up">
       <label for="firstName">First Name</label>
       <input
@@ -153,6 +147,7 @@
       <input type="submit" value="Submit" id="submit" />
     </form>
     <br />
+    <div id="submissionMessage"></div> 
     <button id="saved">View Saved Data</button>
     <button id="liveUsersBtn">View Live Users</button>
     <ul id="userList" style="display: none;"></ul>
@@ -161,64 +156,93 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+    
 
-    const userData = document.getElementById("userData");
+      const saved = document.getElementById("saved");
+      saved.addEventListener("click", () => {
+        window.location.href = "/user.html";
+      });
 
-const saved = document.getElementById("saved");
-saved.addEventListener("click", () => {
-  window.location.href = "/user";
-});
+      const socket = io();
 
-const socket = io();
+      document.getElementById("liveUsersBtn").addEventListener("click", () => {
+        socket.emit('get_user_list');  // Request the list of users from the server
+      });
 
-const liveUsersBtn = document.getElementById("liveUsersBtn");
-const userList = document.getElementById("userList");
+      socket.on('user_list', (users) => {
+        const userList = document.getElementById("userList");
+        const userData = document.getElementById("userData");
+        userList.innerHTML = '';
+        userList.style.display = 'block';
+        userData.style.display = 'none';
 
-liveUsersBtn.addEventListener("click", () => {
-  userList.style.display = userList.style.display === "none" ? "block" : "none";
-});
-
-socket.on("user_list", (users) => {
-  userList.innerHTML = "";
-  users.forEach((user) => {
-    const li = document.createElement("li");
-    li.textContent = `${user.email} (Socket ID: ${user.socketId})`;
-    li.addEventListener("click", () => {
-      fetch("/getUser")
-        .then((response) => response.json())
-        .then((data) => {
-          const clickedUser = data.find((u) => u.socketId === user.socketId);
-          if (clickedUser) {
-            userData.innerHTML = `
-              <p><strong>First Name:</strong> ${clickedUser.firstName}</p>
-              <p><strong>Last Name:</strong> ${clickedUser.lastName}</p>
-              <p><strong>Mobile No:</strong> ${clickedUser.mobile}</p>
-              <p><strong>Email:</strong> ${clickedUser.email}</p>
-              <p><strong>Street:</strong> ${clickedUser.street}</p>
-              <p><strong>City:</strong> ${clickedUser.city}</p>
-              <p><strong>State:</strong> ${clickedUser.state}</p>
-              <p><strong>Country:</strong> ${clickedUser.country}</p>
-              <p><strong>Login ID:</strong> ${clickedUser.login}</p>
-            `;
-            userData.style.display = "block";
-          }
+        users.forEach(user => {
+          const li = document.createElement('li');
+          li.textContent = `${user.email} (Socket ID: ${user.socketId})`;
+          li.addEventListener('click', () => {
+            fetch(`/getUser/${user.socketId}`)
+              .then(response => response.json())
+              .then(data => {
+                userData.innerHTML = `
+                  <p><strong>First Name:</strong> ${data.firstName}</p>
+                  <p><strong>Last Name:</strong> ${data.lastName}</p>
+                  <p><strong>Mobile No:</strong> ${data.mobile}</p>
+                  <p><strong>Email:</strong> ${data.email}</p>
+                  <p><strong>Street:</strong> ${data.street}</p>
+                  <p><strong>City:</strong> ${data.city}</p>
+                  <p><strong>State:</strong> ${data.state}</p>
+                  <p><strong>Country:</strong> ${data.country}</p>
+                  <p><strong>Login ID:</strong> ${data.login}</p>
+                `;
+                userData.style.display = 'block';
+              });
+          });
+          userList.appendChild(li);
         });
-    });
-    userList.appendChild(li);
-  });
-});
+      });
 
-document.getElementById("myform").addEventListener("submit", (event) => {
-  event.preventDefault();
-  const formData = new FormData(document.getElementById("myform"));
-  const user = {};
-  formData.forEach((value, key) => {
-    user[key] = value;
-  });
-  socket.emit("new_user", user);
-  document.getElementById("myform").reset(); // Reset the form after submission
-  document.getElementById("confirmationMessage").style.display = "block"; // Display confirmation message
-});
-     </script>
+      document.getElementById('myform').addEventListener('submit', (event) => {
+        event.preventDefault();
+        
+        let firstName= document.getElementById('firstName')
+        let lastName= document.getElementById('lastName')
+        let mobile= document.getElementById('mobile')
+        let email= document.getElementById('email')
+        let street= document.getElementById('street')
+        let city = document.getElementById('city')
+        let state=document.getElementById('state')
+        let country= document.getElementById('country')
+        let login= document.getElementById('loginId')
+        let password = document.getElementById('password')
+        const newUser = {
+          firstName:firstName.value,
+          lastName:lastName.value,
+          mobile:mobile.value,
+          email:email.value,
+          street:street.value,
+          city:city.value,
+          state:state.value,
+          country:country.value,
+          login:login.value,
+          password:password.value,
+
+        };
+        firstName.value='';
+        lastName.value='';
+        mobile.value='';
+        email.value='';
+        street.value="";
+        city.value='';
+        state.value='';
+        country.value='';
+        login.value='';
+        password.value='';
+
+        alert('DATA IS SUBMITTED')
+        
+        socket.emit('new_user', newUser);
+        document.getElementById('myform').submit();
+      });
+    </script>
   </body>
 </html>
