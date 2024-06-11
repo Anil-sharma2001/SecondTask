@@ -61,10 +61,30 @@
         border-radius: 8px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       }
+      #userData {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      #confirmationMessage {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        border-radius: 5px;
+        display: none;
+        text-align: center; /* Center the text */
+      }
     </style>
   </head>
   <body>
     <h2>Enter your details</h2>
+    <div id="confirmationMessage">Form successfully submitted!</div>
     <form id="myform" method="post" action="/sign_up">
       <label for="firstName">First Name</label>
       <input
@@ -136,75 +156,69 @@
     <button id="saved">View Saved Data</button>
     <button id="liveUsersBtn">View Live Users</button>
     <ul id="userList" style="display: none;"></ul>
+    <div id="userData" style="display: none;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const submit = document.getElementById('submit');
-      submit.addEventListener("click",()=>{
-        alert('Successfully submitted');
-      });
 
-      const saved = document.getElementById("saved");
-      saved.addEventListener("click", () => {
-        window.location.href = "/user";
-      });
+    const userData = document.getElementById("userData");
 
-      const socket = io();
+const saved = document.getElementById("saved");
+saved.addEventListener("click", () => {
+  window.location.href = "/user";
+});
 
-      const liveUsersBtn = document.getElementById("liveUsersBtn");
+const socket = io();
+
+const liveUsersBtn = document.getElementById("liveUsersBtn");
 const userList = document.getElementById("userList");
 
 liveUsersBtn.addEventListener("click", () => {
   userList.style.display = userList.style.display === "none" ? "block" : "none";
 });
 
-socket.on('user_list', (users) => {
-  userList.innerHTML = '';
-  users.forEach(user => {
-    const li = document.createElement('li');
+socket.on("user_list", (users) => {
+  userList.innerHTML = "";
+  users.forEach((user) => {
+    const li = document.createElement("li");
     li.textContent = `${user.email} (Socket ID: ${user.socketId})`;
-    li.addEventListener('click', () => {
-  fetch(`/getUser?email=${user.email}`)
-    .then(response => response.json())
-    .then(data => {
-      const clickedUser = data.find(u => u.socketId === user.socketId);
-      const userData = `
-        First Name: ${clickedUser.firstName}\n
-        Last Name: ${clickedUser.lastName}\n
-        Mobile No: ${clickedUser.mobile}\n
-        Email ID: ${clickedUser.email}\n
-        Street: ${clickedUser.street}\n
-        City: ${clickedUser.city}\n
-        State: ${clickedUser.state}\n
-        Country: ${clickedUser.country}\n
-        Login ID: ${clickedUser.login}
-      `;
-      alert(userData);
+    li.addEventListener("click", () => {
+      fetch("/getUser")
+        .then((response) => response.json())
+        .then((data) => {
+          const clickedUser = data.find((u) => u.socketId === user.socketId);
+          if (clickedUser) {
+            userData.innerHTML = `
+              <p><strong>First Name:</strong> ${clickedUser.firstName}</p>
+              <p><strong>Last Name:</strong> ${clickedUser.lastName}</p>
+              <p><strong>Mobile No:</strong> ${clickedUser.mobile}</p>
+              <p><strong>Email:</strong> ${clickedUser.email}</p>
+              <p><strong>Street:</strong> ${clickedUser.street}</p>
+              <p><strong>City:</strong> ${clickedUser.city}</p>
+              <p><strong>State:</strong> ${clickedUser.state}</p>
+              <p><strong>Country:</strong> ${clickedUser.country}</p>
+              <p><strong>Login ID:</strong> ${clickedUser.login}</p>
+            `;
+            userData.style.display = "block";
+          }
+        });
     });
-});
-
     userList.appendChild(li);
   });
 });
 
-      document.getElementById('myform').addEventListener('submit', (event) => {
-        event.preventDefault();
-        const user = {
-          firstName: document.getElementById('firstName').value,
-          lastName: document.getElementById('lastName').value,
-          mobile: document.getElementById('mobile').value,
-          email: document.getElementById('email').value,
-          street: document.getElementById('street').value,
-          city: document.getElementById('city').value,
-          state: document.getElementById('state').value,
-          country: document.getElementById('country').value,
-          login: document.getElementById('loginId').value,
-          password: document.getElementById('password').value
-        };
-        socket.emit('new_user', user);
-        document.getElementById('myform').submit();
-      });
-    </script>
+document.getElementById("myform").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const formData = new FormData(document.getElementById("myform"));
+  const user = {};
+  formData.forEach((value, key) => {
+    user[key] = value;
+  });
+  socket.emit("new_user", user);
+  document.getElementById("myform").reset(); // Reset the form after submission
+  document.getElementById("confirmationMessage").style.display = "block"; // Display confirmation message
+});
+     </script>
   </body>
 </html>

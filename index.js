@@ -16,7 +16,7 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-mongoose.connect('mongodb+srv://anilkumar2001:anil2001@userdata.wdht2zr.mongodb.net/', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect('mongodb+srv://anilkumar2001:anil2001@userdata.wdht2zr.mongodb.net/');
 const db = mongoose.connection;
 db.on('error', () => console.log('error'));
 db.once('open', () => console.log('connected'));
@@ -40,18 +40,21 @@ const User = mongoose.model('User', userSchema);
 io.on('connection', (socket) => {
     console.log('New user connected');
 
-    // Handle user disconnect
-    socket.on('disconnect', async () => {
-        await User.findOneAndDelete({ socketId: socket.id });
-        io.emit('user_list', await User.find({}));
-    });
+    // Join the user to the "live_users" room
+    socket.join('live_users');
 
-    // Handle new user registration
+    // When a new user is added to MongoDB
     socket.on('new_user', async (user) => {
         user.socketId = socket.id;
         const newUser = new User(user);
         await newUser.save();
-        io.emit('user_list', await User.find({}));
+        io.to('live_users').emit('user_list', await User.find({}));
+    });
+
+    // Disconnect event
+    socket.on('disconnect', async () => {
+        await User.findOneAndDelete({ socketId: socket.id });
+        io.to('live_users').emit('user_list', await User.find({}));
     });
 });
 
@@ -113,5 +116,5 @@ app.get('/user', (req, res) => {
 });
 
 server.listen(port, () => {
-    console.log('server started on port', port);
+    console.log('server started');
 });
